@@ -1,5 +1,6 @@
 
 # CPU-Scheduling Simulator
+KSU CS3502 project
 
 ## Table of Contents
 1. [Overview](#overview)  

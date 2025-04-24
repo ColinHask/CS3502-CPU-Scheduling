@@ -8,9 +8,7 @@ from typing import List, Dict
 import matplotlib.pyplot as plt
 
 
-# ────────────────────────────────────────────────────────────────────────────────
-#  Data Structures
-# ────────────────────────────────────────────────────────────────────────────────
+#  Data Structures ----------------------------------------------------------------
 @dataclass(order=True)
 class Process:
     pid: int
@@ -26,9 +24,8 @@ class Process:
     def __post_init__(self):
         self.remaining = self.burst
 
-# ────────────────────────────────────────────────────────────────────────────────
-#  Workload Generators
-# ────────────────────────────────────────────────────────────────────────────────
+#  Workload Generators --------------------------------------------------------
+
 def small_workload() -> List[Process]:
     """4 easy-to-verify processes."""
     return [
@@ -67,9 +64,8 @@ def edge_workloads() -> Dict[str, List[Process]]:
     }
 
 
-# ────────────────────────────────────────────────────────────────────────────────
-#  Scheduling Algorithms
-# ────────────────────────────────────────────────────────────────────────────────
+#  Scheduling Algorithms -----------------------------------------------------------
+
 def fcfs(procs: List[Process]) -> List[Process]:
     t = 0
     for p in sorted(procs, key=lambda x: x.arrival):
@@ -172,9 +168,8 @@ ALGORITHMS = {
 }
 
 
-# ────────────────────────────────────────────────────────────────────────────────
-#  Metrics + Reporting
-# ────────────────────────────────────────────────────────────────────────────────
+#  Metrics + Reporting ---------------------------------------------------------------------
+
 def metrics(schedule: List[Process]) -> Dict[str, float]:
 
     n = len(schedule)
@@ -233,9 +228,7 @@ def plot(all_metrics: Dict[str, Dict[str, float]], title: str, filename: str):
     plt.close(fig)
 
 
-# ────────────────────────────────────────────────────────────────────────────────
-#  Runner Helper
-# ────────────────────────────────────────────────────────────────────────────────
+#  Runner Helper --------------------------------------------------------------------------
 def run_workload(workload: List[Process], workload_name: str):
     results = {}
     for alg_name, alg_fn in ALGORITHMS.items():
@@ -246,9 +239,7 @@ def run_workload(workload: List[Process], workload_name: str):
     plot(results, workload_name, f"{workload_name}_comparison.png")
 
 
-# ────────────────────────────────────────────────────────────────────────────────
-#  Menu
-# ────────────────────────────────────────────────────────────────────────────────
+#  Menu ---------------------------------------------------------------------------------
 def menu():
     while True:
         print(
