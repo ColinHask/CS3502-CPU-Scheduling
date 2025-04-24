@@ -1,26 +1,4 @@
-#!/usr/bin/env python3
-"""
-CPU Scheduling Simulator
-------------------------
-Implements:
-  • FCFS
-  • SJF  (non-preemptive)
-  • SRTF (preemptive)
-  • MLFQ (two-level RR)
-
-Menu options are self-contained:
-  1) Small synthetic workload (4 procs)
-  2) Large synthetic workload (20 procs)
-  3) Edge-case workloads (two variants)
-  4) Exit
-
-Each option:
-  • Builds its own workload
-  • Runs all algorithms
-  • Prints schedule + metrics
-  • Saves a bar chart (PNG) comparing metrics
-"""
-
+import os
 import copy
 import random
 import sys
@@ -202,18 +180,25 @@ def report(name: str, schedule: List[Process]) -> Dict[str, float]:
 
 
 def plot(all_metrics: Dict[str, Dict[str, float]], title: str, filename: str):
+    """Save comparison bar chart into repo’s img/ directory."""
     labels = list(all_metrics.keys())
     metric_names = list(next(iter(all_metrics.values())).keys())
 
     fig, axes = plt.subplots(len(metric_names), 1, figsize=(8, 3.5 * len(metric_names)))
     for idx, m in enumerate(metric_names):
-        vals = [all_metrics[a][m] for a in labels]
-        axes[idx].bar(labels, vals)
+        axes[idx].bar(labels, [all_metrics[a][m] for a in labels])
         axes[idx].set_title(m)
+
     fig.suptitle(title)
     plt.tight_layout(rect=[0, 0.03, 1, 0.95])
-    plt.savefig(filename)
-    print(f"Chart saved to {filename}")
+
+    # Ensure img/ directory exists relative to this script
+    out_dir = os.path.join(os.path.dirname(__file__), "img")
+    os.makedirs(out_dir, exist_ok=True)
+    out_path = os.path.join(out_dir, filename)
+
+    plt.savefig(out_path)
+    print(f"Chart saved to {out_path}")
     plt.close(fig)
 
 
