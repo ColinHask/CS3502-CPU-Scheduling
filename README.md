@@ -8,9 +8,6 @@ CPU Scheduling project for Project 2 (CS3502 Operating Systems)
 2. [Features](#features)  
 3. [Installation](#installation)  
 4. [Usage](#usage)  
-5. [Repository Layout](#repository-layout)  
-6. [Extending the Simulator](#extending-the-simulator)  
-7. [License](#license)
 
 ---
 
@@ -51,3 +48,34 @@ source venv/bin/activate
 # Windows
 # venv\Scripts\activate
 pip install -r requirements.txt
+
+## Usage
+```bash
+python cpu_scheduler.py
+```
+Menu:
+```
+CPU Scheduler Menu
+1) Small synthetic workload (4 processes)
+2) Large synthetic workload (20 processes)
+3) Edge-case workloads
+4) Exit
+```
+Choosing **1**, **2**, or **3** will:
+1. Load the workload  
+2. Execute FCFS, SJF, SRTF, MLFQ  
+3. Print schedules & metrics  
+4. Save a comparison chart to `img/<WorkloadName>_comparison.png`
+
+Example output:
+```
+=== SRTF ===
+P01: arrival= 0, burst= 8, start= 0, finish=16
+...
+  AWT        : 4.50
+  ATT        : 9.25
+  RT         : 4.50
+  Throughput : 0.24
+  CPU_Util   : 100.00
+Chart saved to img/Small_comparison.png
+```
