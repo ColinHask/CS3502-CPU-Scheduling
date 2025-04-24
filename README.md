@@ -1,7 +1,5 @@
-# CS3502-CPU-Scheduling
-CPU Scheduling project for Project 2 (CS3502 Operating Systems)
 
-# CPU-Scheduling Simulator (Python)
+# CPU-Scheduling Simulator
 
 ## Table of Contents
 1. [Overview](#overview)  
@@ -19,15 +17,15 @@ core performance metrics, and saves bar-chart comparisons for each workload.
 |-----------|------|-------|
 | **FCFS**  | Non-preemptive | First-Come, First-Served |
 | **SJF**   | Non-preemptive | Shortest Job First |
-| **SRTF**  | Preemptive     | Shortest Remaining Time First *(new)* |
-| **MLFQ**  | Preemptive     | Two-level Multi-Level Feedback Queue *(new)* |
+| **SRTF**  | Preemptive     | Shortest Remaining Time First |
+| **MLFQ**  | Preemptive     | Two-level Multi-Level Feedback Queue |
 
 ---
 
 ## Features
-* **Self-contained menu:** select a workload → runs *all* algorithms, prints
+* **Menu:** select a workload → runs *all* algorithms, prints
   schedules & metrics, and saves a PNG chart in `img/`.
-* **Built-in workloads**  
+* **Built in workloads**  
   * **Small** (4 processes) – sanity check  
   * **Large** (20 processes) – deterministic random seed  
   * **Edge cases** – identical bursts & extreme burst mix
