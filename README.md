@@ -48,6 +48,7 @@ source venv/bin/activate
 pip install -r requirements.txt
 ```
 ## Usage
+run:
 ```bash
 python cpu_scheduler.py
 ```
