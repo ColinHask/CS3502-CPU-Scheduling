@@ -1,8 +1,38 @@
+#!/usr/bin/env python3
+"""
+CPU Scheduling Simulator
+------------------------
+Implements:
+  • FCFS
+  • SJF  (non-preemptive)
+  • SRTF (preemptive)
+  • MLFQ (two-level RR)
 
+Menu options are self-contained:
+  1) Small synthetic workload (4 procs)
+  2) Large synthetic workload (20 procs)
+  3) Edge-case workloads (two variants)
+  4) Exit
+
+Each option:
+  • Builds its own workload
+  • Runs all algorithms
+  • Prints schedule + metrics
+  • Saves a bar chart (PNG) comparing metrics
+"""
+
+import copy
+import random
+import sys
 from dataclasses import dataclass, field
 from typing import List, Dict
-import sys
 
+import matplotlib.pyplot as plt
+
+
+# ────────────────────────────────────────────────────────────────────────────────
+#  Data Structures
+# ────────────────────────────────────────────────────────────────────────────────
 @dataclass(order=True)
 class Process:
     pid: int
@@ -16,57 +46,213 @@ class Process:
     def __post_init__(self):
         self.remaining = self.burst
 
-# --- Workload Generators ---
 
-def get_small_synthetic() -> List[Process]:
-    """Return a small hard-coded test workload."""
-    pass
+# ────────────────────────────────────────────────────────────────────────────────
+#  Workload Generators
+# ────────────────────────────────────────────────────────────────────────────────
+def small_workload() -> List[Process]:
+    """4 easy-to-verify processes."""
+    return [
+        Process(1, 0, 8),
+        Process(2, 1, 4),
+        Process(3, 2, 9),
+        Process(4, 3, 5),
+    ]
 
-def get_large_synthetic() -> List[Process]:
-    """Return a larger synthetic workload."""
-    pass
 
-def get_edge_case_workloads() -> Dict[str, List[Process]]:
-    """Return a dict of edge-case workloads."""
-    pass
+def large_workload() -> List[Process]:
+    """20 deterministic random processes."""
+    random.seed(42)
+    return [
+        Process(i + 1, random.randint(0, 10), random.randint(1, 20))
+        for i in range(20)
+    ]
 
-# --- Scheduling Algorithms ---
 
-def fcfs_scheduler(procs: List[Process]) -> List[Process]:
-    """First-Come, First-Served scheduler."""
-    pass
+def edge_workloads() -> Dict[str, List[Process]]:
+    """Two pathological cases."""
+    return {
+        "Identical": [Process(i + 1, 0, 5) for i in range(5)],
+        "ExtremeMix": [
+            Process(1, 0, 100),
+            Process(2, 1, 1),
+            Process(3, 2, 200),
+            Process(4, 3, 2),
+        ],
+    }
 
-def sjf_scheduler(procs: List[Process]) -> List[Process]:
-    """Shortest Job First (non-preemptive) scheduler."""
-    pass
 
-def srtf_scheduler(procs: List[Process]) -> List[Process]:
-    """Shortest Remaining Time First (preemptive) scheduler."""
-    pass
+# ────────────────────────────────────────────────────────────────────────────────
+#  Scheduling Algorithms
+# ────────────────────────────────────────────────────────────────────────────────
+def fcfs(procs: List[Process]) -> List[Process]:
+    t = 0
+    for p in sorted(procs, key=lambda x: x.arrival):
+        t = max(t, p.arrival)
+        p.start, t = t, t + p.burst
+        p.finish = t
+    return procs
 
-def mlfq_scheduler(procs: List[Process], q1=4, q2=8) -> List[Process]:
-    """Multi-Level Feedback Queue scheduler."""
-    pass
 
-# --- Metrics & Reporting ---
+def sjf(procs: List[Process]) -> List[Process]:
+    pending = sorted(procs, key=lambda x: x.arrival)
+    ready, done, t = [], [], 0
+    while pending or ready:
+        while pending and pending[0].arrival <= t:
+            ready.append(pending.pop(0))
+        if not ready:
+            t = pending[0].arrival
+            continue
+        ready.sort(key=lambda x: x.burst)
+        p = ready.pop(0)
+        p.start, t = t, t + p.burst
+        p.finish = t
+        done.append(p)
+    return done
 
-def compute_metrics(schedule: List[Process]) -> Dict[str, float]:
-    """Compute performance metrics for a schedule."""
-    pass
 
-def print_schedule_and_metrics(name: str, schedule: List[Process]):
-    """Print schedule order and metrics."""
-    pass
+def srtf(procs: List[Process]) -> List[Process]:
+    pending = sorted(procs, key=lambda x: x.arrival)
+    ready, done, t = [], [], 0
+    while pending or ready:
+        while pending and pending[0].arrival <= t:
+            ready.append(pending.pop(0))
+        if not ready:
+            t = pending[0].arrival
+            continue
+        ready.sort(key=lambda x: x.remaining)
+        p = ready[0]
+        if p.start < 0:
+            p.start = t
+        p.remaining -= 1
+        t += 1
+        if p.remaining == 0:
+            p.finish = t
+            done.append(p)
+            ready.pop(0)
+    return done
 
-def plot_comparison(results: Dict[str, Dict[str, float]]):
-    """Plot comparison chart across algorithms."""
-    pass
 
-# --- Menu Interface ---
+def mlfq(procs: List[Process], q1=4, q2=8) -> List[Process]:
+    pending = sorted(procs, key=lambda x: x.arrival)
+    q1q, q2q, done, t = [], [], [], 0
+    while pending or q1q or q2q:
+        while pending and pending[0].arrival <= t:
+            q1q.append(pending.pop(0))
+        if q1q:
+            p = q1q.pop(0)
+            if p.start < 0:
+                p.start = t
+            run = min(q1, p.remaining)
+            p.remaining -= run
+            t += run
+            if p.remaining == 0:
+                p.finish = t
+                done.append(p)
+            else:
+                q2q.append(p)
+        elif q2q:
+            p = q2q.pop(0)
+            run = min(q2, p.remaining)
+            p.remaining -= run
+            t += run
+            if p.remaining == 0:
+                p.finish = t
+                done.append(p)
+            else:
+                q2q.append(p)
+        else:
+            t = pending[0].arrival
+    return done
 
-def run_menu():
-    """Terminal menu loop for user interaction."""
-    pass
+
+ALGORITHMS = {
+    "FCFS": fcfs,
+    "SJF": sjf,
+    "SRTF": srtf,
+    "MLFQ": mlfq,
+}
+
+
+# ────────────────────────────────────────────────────────────────────────────────
+#  Metrics + Reporting
+# ────────────────────────────────────────────────────────────────────────────────
+def metrics(schedule: List[Process]) -> Dict[str, float]:
+    n = len(schedule)
+    total_burst = sum(p.burst for p in schedule)
+    makespan = max(p.finish for p in schedule) - min(p.arrival for p in schedule)
+    return {
+        "AWT": sum(p.start - p.arrival for p in schedule) / n,
+        "ATT": sum(p.finish - p.arrival for p in schedule) / n,
+        "RT":  sum(p.start - p.arrival for p in schedule) / n,
+        "Throughput": n / makespan,
+        "CPU_Util": (total_burst / makespan) * 100,
+    }
+
+
+def report(name: str, schedule: List[Process]) -> Dict[str, float]:
+    print(f"\n=== {name} ===")
+    for p in schedule:
+        print(f"P{p.pid:02d}: arrival={p.arrival:2d}, "
+              f"burst={p.burst:2d}, start={p.start:2d}, finish={p.finish:2d}")
+    m = metrics(schedule)
+    for k, v in m.items():
+        print(f"  {k:>10}: {v:.2f}")
+    return m
+
+
+def plot(all_metrics: Dict[str, Dict[str, float]], title: str, filename: str):
+    labels = list(all_metrics.keys())
+    metric_names = list(next(iter(all_metrics.values())).keys())
+
+    fig, axes = plt.subplots(len(metric_names), 1, figsize=(8, 3.5 * len(metric_names)))
+    for idx, m in enumerate(metric_names):
+        vals = [all_metrics[a][m] for a in labels]
+        axes[idx].bar(labels, vals)
+        axes[idx].set_title(m)
+    fig.suptitle(title)
+    plt.tight_layout(rect=[0, 0.03, 1, 0.95])
+    plt.savefig(filename)
+    print(f"Chart saved to {filename}")
+    plt.close(fig)
+
+
+# ────────────────────────────────────────────────────────────────────────────────
+#  Runner Helper
+# ────────────────────────────────────────────────────────────────────────────────
+def run_workload(workload: List[Process], workload_name: str):
+    results = {}
+    for alg_name, alg_fn in ALGORITHMS.items():
+        schedule = alg_fn(copy.deepcopy(workload))
+        results[alg_name] = report(alg_name, schedule)
+    plot(results, workload_name, f"{workload_name}_comparison.png")
+
+
+# ────────────────────────────────────────────────────────────────────────────────
+#  Menu
+# ────────────────────────────────────────────────────────────────────────────────
+def menu():
+    while True:
+        print(
+            "\nCPU Scheduler Menu\n"
+            "1) Small synthetic workload (4 processes)\n"
+            "2) Large synthetic workload (20 processes)\n"
+            "3) Edge-case workloads\n"
+            "4) Exit\n"
+        )
+        choice = input("Select an option: ").strip()
+        if choice == "1":
+            run_workload(small_workload(), "Small")
+        elif choice == "2":
+            run_workload(large_workload(), "Large")
+        elif choice == "3":
+            for name, wl in edge_workloads().items():
+                run_workload(wl, f"Edge_{name}")
+        elif choice == "4":
+            sys.exit(0)
+        else:
+            print("Invalid choice.")
+
 
 if __name__ == "__main__":
-    run_menu()
+    menu()
