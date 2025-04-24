@@ -48,7 +48,7 @@ source venv/bin/activate
 # Windows
 # venv\Scripts\activate
 pip install -r requirements.txt
-
+```
 ## Usage
 ```bash
 python cpu_scheduler.py
