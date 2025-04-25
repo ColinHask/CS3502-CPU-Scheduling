@@ -168,35 +168,34 @@ ALGORITHMS = {
 }
 
 
-#  Metrics + Reporting ---------------------------------------------------------------------
-
+# ── Metrics + Reporting ───────────────────────────────────────────────
 def metrics(schedule: List[Process]) -> Dict[str, float]:
-
+    """Return AWT, ATT, RT, throughput, and CPU utilization."""
     n = len(schedule)
     total_burst = sum(p.burst for p in schedule)
-
     makespan = max(p.finish for p in schedule) - min(p.arrival for p in schedule)
+
     return {
         "AWT": sum(p.start - p.arrival for p in schedule) / n,
-
         "ATT": sum(p.finish - p.arrival for p in schedule) / n,
         "RT":  sum(p.start - p.arrival for p in schedule) / n,
         "Throughput": n / makespan,
-        "CPU_Util": (total_burst / makespan) * 100,
+        "CPU Utilization (%)": (total_burst / makespan) * 100,
     }
 
 
 def report(name: str, schedule: List[Process]) -> Dict[str, float]:
+    """Print per-process timeline and the metrics just computed."""
     print(f"\n=== {name} ===")
-
     for p in schedule:
-        print(f"P{p.pid:02d}: arrival={p.arrival:2d}, "
-              
-              f"burst={p.burst:2d}, start={p.start:2d}, finish={p.finish:2d}")
-    m = metrics(schedule)
+        print(
+            f"P{p.pid:02d}: arrival={p.arrival:2d}, "
+            f"burst={p.burst:2d}, start={p.start:2d}, finish={p.finish:2d}"
+        )
 
+    m = metrics(schedule)
     for k, v in m.items():
-        print(f"  {k:>10}: {v:.2f}")
+        print(f"  {k:>18}: {v:.2f}")   # widen field for the longer label
     return m
 
 
