@@ -7,18 +7,16 @@ from typing import List, Dict
 
 import matplotlib.pyplot as plt
 
-
-#  Data Structures ----------------------------------------------------------------
+# holds everything the simulator needs to know about one job
 @dataclass(order=True)
 class Process:
-    pid: int
-    arrival: int
-
-    burst: int
+    pid: int               # unique process ID
+    arrival: int           # arrival time into the ready queue
+    burst: int             # total CPU time needed
     priority: int = field(default=0, compare=False)
-    start: int = field(default=-1, compare=False)
 
-    finish: int = field(default=0, compare=False)
+    start: int = field(default=-1, compare=False)   # first time on CPU
+    finish: int = field(default=0,  compare=False)  # completion time
     remaining: int = field(init=False, compare=False)
 
     def __post_init__(self):
@@ -26,6 +24,7 @@ class Process:
 
 #  Workload Generators --------------------------------------------------------
 
+# hardcoded 4 process workload for small test
 def small_workload() -> List[Process]:
     """4 easy-to-verify processes."""
     return [
@@ -36,23 +35,28 @@ def small_workload() -> List[Process]:
         Process(4, 3, 5),
     ]
 
-
+# larger realistic workload to showcase performance differences
 def large_workload() -> List[Process]:
-    """20 deterministic random processes."""
     random.seed(42)
 
     return [
         Process(i + 1, random.randint(0, 10), random.randint(1, 20))
-
-
         for i in range(20)
     ]
 
-
+# edge case workloads
 def edge_workloads() -> Dict[str, List[Process]]:
-    """Two pathological cases."""
+    
     return {
+
+        #no variance
+        # All five jobs arrive at time 0 and need exactly 5 ticks each.
+        # No variation in arrival or burst.
         "Identical": [Process(i + 1, 0, 5) for i in range(5)],
+
+        #maximum variance
+        # Four jobs with huge burst variance (1, 2, 100, 200).
+        # Short jobs arrive after the long one has already started
         "ExtremeMix": [
 
             Process(1, 0, 100),
@@ -66,6 +70,9 @@ def edge_workloads() -> Dict[str, List[Process]]:
 
 #  Scheduling Algorithms -----------------------------------------------------------
 
+# first come first serve
+# Non-preemptive run jobs in arrival order
+# Simple fair by arrival, but long first job means everyone waits
 def fcfs(procs: List[Process]) -> List[Process]:
     t = 0
     for p in sorted(procs, key=lambda x: x.arrival):
@@ -75,7 +82,9 @@ def fcfs(procs: List[Process]) -> List[Process]:
         p.finish = t
     return procs
 
-
+# shortest job first
+# Non-preemptive. pick ready job with smallest burst
+# Lowest average wait if burst times are known. can starve long jobs
 def sjf(procs: List[Process]) -> List[Process]:
     pending = sorted(procs, key=lambda x: x.arrival)
     ready, done, t = [], [], 0
@@ -96,7 +105,9 @@ def sjf(procs: List[Process]) -> List[Process]:
         done.append(p)
     return done
 
-
+#  shortest remaining time first
+# Pre-emptive SJF; always run job with least remaining CPU.
+# Minimizes wait/turnaround; lots of context switches; needs remaining-time estimates.
 def srtf(procs: List[Process]) -> List[Process]:
     pending = sorted(procs, key=lambda x: x.arrival)
     ready, done, t = [], [], 0
@@ -121,7 +132,9 @@ def srtf(procs: List[Process]) -> List[Process]:
             ready.pop(0)
     return done
 
-
+#  Multi-Level Feedback Queue
+# two RR queues: 4-tick quantum (Q1) if still running, demote to 8-tick quantum (Q2)
+# adapts without burst knowledge, favors short tasks, prevents starvation
 def mlfq(procs: List[Process], q1=4, q2=8) -> List[Process]:
     pending = sorted(procs, key=lambda x: x.arrival)
     q1q, q2q, done, t = [], [], [], 0
@@ -159,7 +172,7 @@ def mlfq(procs: List[Process], q1=4, q2=8) -> List[Process]:
             t = pending[0].arrival
     return done
 
-
+# name to function map
 ALGORITHMS = {
     "FCFS": fcfs,
     "SJF": sjf,
@@ -183,9 +196,8 @@ def metrics(schedule: List[Process]) -> Dict[str, float]:
         "CPU Utilization (%)": (total_burst / makespan) * 100,
     }
 
-
+# Prints timeline & metrics
 def report(name: str, schedule: List[Process]) -> Dict[str, float]:
-    """Print per-process timeline and the metrics just computed."""
     print(f"\n=== {name} ===")
     for p in schedule:
         print(
@@ -200,7 +212,7 @@ def report(name: str, schedule: List[Process]) -> Dict[str, float]:
 
 
 def plot(all_metrics: Dict[str, Dict[str, float]], title: str, filename: str):
-    """Save comparison bar chart into repo’s img/ directory."""
+    """Save comparison bar chart into repos img/ directory."""
 
     labels = list(all_metrics.keys())
 
@@ -215,7 +227,6 @@ def plot(all_metrics: Dict[str, Dict[str, float]], title: str, filename: str):
 
     plt.tight_layout(rect=[0, 0.03, 1, 0.95])
 
-    # Ensure img/ directory exists relative to this script
     out_dir = os.path.join(os.path.dirname(__file__), "img")
 
     os.makedirs(out_dir, exist_ok=True)
